@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Intercom Terminal</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1e38 100%);
+            --card-bg: #1e293b;
+            --accent: #10b981; 
+            --accent-hover: #059669;
+            --danger: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .visitor-card {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+            border: 1px solid #334155;
+            position: relative;
+        }
+
+        /* Language Picker Styles */
+        .lang-picker {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .lang-btn {
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .lang-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        .status-badge {
+            background: #3b82f6;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 20px;
+            letter-spacing: 0.5px;
+        }
+
+        h1 { font-size: 26px; margin: 0 0 10px 0; font-weight: 700; }
+        p { color: var(--text-muted); font-size: 15px; line-height: 1.6; margin-bottom: 30px; }
+
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: 700;
+            border-radius: 14px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        .btn-danger { background: var(--danger); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2); }
+
+        .video-box {
+            width: 100%;
+            border-radius: 16px;
+            background: #000;
+            margin-top: 20px;
+            overflow: hidden;
+            display: none;
+            border: 2px solid #334155;
+        }
+
+        video { width: 100%; display: block; transform: scaleX(-1); }
+        .status-msg { color: #3b82f6; font-weight: 600; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="visitor-card">
+    <div class="lang-picker">
+        <button id="btnEn" class="lang-btn active" onclick="setLanguage('en')">English</button>
+        <button id="btnTa" class="lang-btn" onclick="setLanguage('ta')">தமிழ்</button>
+    </div>
+
+    <div id="badge" class="status-badge">VISITOR TERMINAL</div>
+    
+    <div id="initScreen">
+        <h1 id="mainTitle">Smart Doorbell</h1>
+        <p id="mainDesc">Press the button below to ring the house panel and initiate a secure live video connection with the resident.</p>
+        <button id="callButton" class="btn" onclick="startCallToResident()">Template Text</button>
+    </div>
+
+    <div id="callScreen" style="display: none;">
+        <h1 id="streamTitle" style="font-size: 20px;">Stream Active</h1>
+        <div id="callStatus" class="status-msg">Connecting to panel...</div>
+        <div class="video-box" id="videoBox">
+            <video id="remoteVideo" autoplay playsinline></video>
+        </div>
+        <button id="endButton" class="btn btn-danger" style="margin-top: 25px;" onclick="disconnectCall()">End Call</button>
+    </div>
+</div>
+
+<script>
+    let peer = null;
+    let localStream = null;
+    let currentCall = null;
+    let currentLang = 'en';
+
+    // Translations Dictionary
+    const dictionary = {
+        en: {
+            badge: "VISITOR TERMINAL",
+            title: "Smart Doorbell",
+            desc: "Press the button below to ring the house panel and initiate a secure live video connection with the resident.",
+            callBtn: "📞 Call Resident",
+            streamTitle: "Stream Active",
+            connecting: "Connecting to panel...",
+            connected: "● LIVE INTERCOM CONNECTED",
+            endBtn: "End Call",
+            errNoQr: "Invalid Door QR Code. No targeted door identifier detected in the web link.",
+            errOffline: "Connection failed. The house panel app might be offline right now.",
+            errPermission: "Camera/Audio system access denied. Please allow permissions to make calls.",
+            alertEnded: "Call Disconnected"
+        },
+        ta: {
+            badge: "வருகையாளர் முனையம்",
+            title: "ஸ்மார்ட் அழைப்பு மணி",
+            desc: "வீட்டில் உள்ளவரைத் தொடர்பு கொண்டு பாதுகாப்பான நேரடி வீடியோ அழைப்பைத் தொடங்க கீழே உள்ள பொத்தானை அழுத்தவும்.",
+            callBtn: "📞 அழைப்பைத் தொடங்கு",
+            streamTitle: "நேரடி இணைப்பு",
+            connecting: "இணைப்பு தேடப்படுகிறது...",
+            connected: "● நேரடித் தொடர்பு இணைக்கப்பட்டது",
+            endBtn: "அழைப்பை முடி",
+            errNoQr: "தவறான QR குறியீடு. முகவரி அடையாளம் கண்டறியப்படவில்லை.",
+            errOffline: "தொடர்பு தோல்வியடைந்தது. வீட்டுப் பேனல் ஆஃப்லைனில் இருக்கலாம்.",
+            errPermission: "கேமரா அல்லது மைக்ரோஃபோன் அனுமதி மறுக்கப்பட்டது. தயவுசெய்து அனுமதி வழங்கவும்.",
+            alertEnded: "அழைப்பு துண்டிக்கப்பட்டது"
+        }
+    };
+
+    // Automatically reads the ?door= identifier from the QR code link
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetDoorId = urlParams.get('door');
+
+    window.onload = () => {
+        setLanguage('en'); // Default language display set to English
+        
+        if (!targetDoorId) {
+            document.getElementById('initScreen').innerHTML = `
+                <h1 style="color:var(--danger)">Error / பிழை</h1>
+                <p>${dictionary.en.errNoQr}</p>
+                <p>${dictionary.ta.errNoQr}</p>
+            `;
+        }
+    };
+
+    // Swap Language Rendering Dynamically
+    function setLanguage(lang) {
+        currentLang = lang;
+        
+        // Handle Active Button Highlights
+        document.getElementById('btnEn').classList.remove('active');
+        document.getElementById('btnTa').classList.remove('active');
+        if(lang === 'en') document.getElementById('btnEn').classList.add('active');
+        if(lang === 'ta') document.getElementById('btnTa').classList.add('active');
+
+        // Apply text switch injections safely
+        if (!targetDoorId) return; 
+        document.getElementById('badge').innerText = dictionary[lang].badge;
+        document.getElementById('mainTitle').innerText = dictionary[lang].title;
+        document.getElementById('mainDesc').innerText = dictionary[lang].desc;
+        document.getElementById('callButton').innerText = dictionary[lang].callBtn;
+        document.getElementById('streamTitle').innerText = dictionary[lang].streamTitle;
+        document.getElementById('endButton').innerText = dictionary[lang].endBtn;
+        
+        if(document.getElementById('callScreen').style.display === 'block') {
+            if(document.getElementById('videoBox').style.display === 'block') {
+                document.getElementById('callStatus').innerText = dictionary[lang].connected;
+            } else {
+                document.getElementById('callStatus').innerText = dictionary[lang].connecting;
+            }
+        }
+    }
+
+    async function startCallToResident() {
+        document.getElementById('initScreen').style.display = 'none';
+        document.getElementById('callScreen').style.display = 'block';
+        document.getElementById('callStatus').innerText = dictionary[currentLang].connecting;
+        
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            peer = new Peer();
+            
+            peer.on('open', () => {
+                const call = peer.call('qr-bell-' + targetDoorId, localStream);
+                currentCall = call;
+
+                call.on('stream', (remoteStream) => {
+                    document.getElementById('callStatus').innerText = dictionary[currentLang].connected;
+                    document.getElementById('videoBox').style.display = 'block';
+                    document.getElementById('remoteVideo').srcObject = remoteStream;
+                });
+            });
+
+            peer.on('error', (err) => {
+                alert(dictionary[currentLang].errOffline);
+                disconnectCall();
+            });
+
+        } catch (err) {
+            alert(dictionary[currentLang].errPermission);
+            location.reload();
+        }
+    }
+
+    function disconnectCall() {
+        if (currentCall) currentCall.close();
+        if (localStream) localStream.getTracks().forEach(track => track.stop());
+        alert(dictionary[currentLang].alertEnded);
+        location.reload();
+    }
+</script>
+</body>
+</html>
