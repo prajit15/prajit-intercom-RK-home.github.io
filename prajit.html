@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Doorbell Receiver</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1e38 100%);
+            --card-bg: #1e293b;
+            --accent: #3b82f6;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-gradient); color: var(--text-main);
+            margin: 0; padding: 15px; display: flex; justify-content: center; align-items: center; min-height: 100vh;
+        }
+        .container {
+            background: var(--card-bg); padding: 25px; border-radius: 20px;
+            width: 100%; max-width: 400px; text-align: center; border: 1px solid #334155;
+        }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; font-size: 11px; font-weight: 600; color: var(--accent); margin-bottom: 5px; text-transform: uppercase; }
+        input { width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; color: white; font-size: 16px; box-sizing: border-box; }
+        .btn { background: var(--accent); color: white; border: none; padding: 14px; font-size: 16px; font-weight: 600; border-radius: 10px; cursor: pointer; width: 100%; }
+        #qrcode { background: white; padding: 15px; border-radius: 12px; display: inline-block; margin: 20px 0; }
+        .video-box { width: 100%; border-radius: 12px; background: #000; margin-top: 15px; display: none; }
+        video { width: 100%; display: block; transform: scaleX(-1); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="setupView">
+        <h1>Doorbell Admin Panel</h1>
+        <p style="color:var(--text-muted); font-size:14px;">Generate your fixed door system parameters here.</p>
+        
+        <div class="input-group">
+            <label>Visitor Public Web URL</label>
+            <input type="url" id="visitorBaseUrl" placeholder="https://yourusername.github.io/visitor.html">
+        </div>
+        <div class="input-group">
+            <label>Door Key Code Name</label>
+            <input type="text" id="doorId" placeholder="e.g., housefrontdoor">
+        </div>
+        <button class="btn" onclick="turnOnReceiver()">Activate Intercom Receiver</button>
+
+        <div id="qrZone" style="display:none;">
+            <div id="qrcode"></div>
+            <p style="color:#10b981; font-weight:600; font-size:14px;">✓ Active: Listening for external calls...</p>
+        </div>
+    </div>
+
+    <div id="liveCallView" style="display:none;">
+        <h2 id="bellStatus" style="color: #ef4444;">🚨 INCOMING RINGING...</h2>
+        <div class="video-box" id="vBox"><video id="viewStream" autoplay playsinline></video></div>
+        <button class="btn" style="background:#ef4444; margin-top:15px;" onclick="killCall()">End Stream</button>
+    </div>
+</div>
+
+<script>
+    let peer = null, localStream = null, currentCall = null, audioCtx = null, ringLoop = null;
+
+    window.onload = () => {
+        if(localStorage.getItem('door')) document.getElementById('doorId').value = localStorage.getItem('door');
+        if(localStorage.getItem('url')) document.getElementById('visitorBaseUrl').value = localStorage.getItem('url');
+    };
+
+    function soundAlert() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let t = audioCtx.currentTime;
+        let playTone = (f, s, d) => {
+            let o = audioCtx.createOscillator(), g = audioCtx.createGain();
+            o.connect(g); g.connect(audioCtx.destination); o.frequency.value = f;
+            g.gain.setValueAtTime(0.4, s); g.gain.exponentialRampToValueAtTime(0.01, s + d);
+            o.start(s); o.stop(s + d);
+        };
+        playTone(880, t, 0.3); playTone(660, t + 0.3, 0.5);
+    }
+
+    function turnOnReceiver() {
+        const dId = document.getElementById('doorId').value.trim().toLowerCase();
+        const vUrl = document.getElementById('visitorBaseUrl').value.trim();
+        if(!dId || !vUrl) return alert("Fill out both input boxes!");
+
+        localStorage.setItem('door', dId); localStorage.setItem('url', vUrl);
+        peer = new Peer('qr-bell-' + dId);
+
+        peer.on('open', () => {
+            document.getElementById('qrZone').style.display = 'block';
+            document.getElementById('qrcode').innerHTML = "";
+            new QRCode(document.getElementById('qrcode'), {
+                text: `${vUrl}?door=${dId}`, width: 200, height: 200
+            });
+        });
+
+        peer.on('call', async (call) => {
+            currentCall = call;
+            document.getElementById('setupView').style.display = 'none';
+            document.getElementById('liveCallView').style.display = 'block';
+            soundAlert(); ringLoop = setInterval(soundAlert, 1800);
+
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                clearInterval(ringLoop);
+                call.answer(localStream);
+                call.on('stream', (s) => {
+                    document.getElementById('bellStatus').innerText = "● LIVE VIDEO FEED";
+                    document.getElementById('vBox').style.display = "block";
+                    document.getElementById('viewStream').srcObject = s;
+                });
+            } catch(e) { clearInterval(ringLoop); alert(e); }
+        });
+    }
+
+    function killCall() {
+        if(ringLoop) clearInterval(ringLoop);
+        if(currentCall) currentCall.close();
+        if(localStream) localStream.getTracks().forEach(t => t.stop());
+        document.getElementById('liveCallView').style.display = 'none';
+        document.getElementById('setupView').style.display = 'block';
+    }
+</script>
+</body>
+</html>
