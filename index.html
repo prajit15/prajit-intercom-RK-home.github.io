@@ -1,557 +1,262 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prajit Digital Album</title>
-  
-  <link rel="icon" href="1761410005401.jpg" type="image/jpeg">
-  <link rel="apple-touch-icon" href="1761410005401.jpg">
-  
-  <style>
-    /* --- CSS STYLES --- */
-    :root {
-      --bg-color: #0b0c10;
-      --header-bg: linear-gradient(135deg, #2a0845, #6441A5);
-      --gold-accent: #FFD700;
-      --text-light: #f8f8f8;
-      --danger-color: #ff416c;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Intercom Terminal</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1e38 100%);
+            --card-bg: #1e293b;
+            --accent: #10b981; 
+            --accent-hover: #059669;
+            --danger: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
 
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-light);
-      overflow-x: hidden;
-    }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
 
-    .album-header {
-      background: var(--header-bg);
-      padding: 40px 20px;
-      text-align: center;
-      border-bottom: 4px solid var(--gold-accent);
-      box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
-    }
+        .visitor-card {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+            border: 1px solid #334155;
+            position: relative;
+        }
 
-    .site-logo {
-      width: 130px;
-      height: 130px;
-      border-radius: 50%;
-      border: 4px solid var(--gold-accent);
-      object-fit: cover;
-      margin-bottom: 15px;
-      box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
-      background-color: #0b0c10;
-      transition: all 0.3s ease;
-    }
+        /* Language Picker Styles */
+        .lang-picker {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
 
-    .album-header h1 {
-      margin: 0;
-      font-size: 3em;
-      color: var(--gold-accent);
-      text-transform: uppercase;
-      letter-spacing: 3px;
-    }
+        .lang-btn {
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
 
-    .album-header p {
-      margin-top: 10px;
-      font-size: 1.2em;
-      font-style: italic;
-      color: #e0e0e0;
-    }
+        .lang-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
 
-    @media (min-width: 1200px) {
-      .site-logo { width: 200px; height: 200px; border-width: 6px; }
-    }
+        .status-badge {
+            background: #3b82f6;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 20px;
+            letter-spacing: 0.5px;
+        }
 
-    @media (max-width: 600px) {
-      .album-header h1 { font-size: 2em; }
-      .album-header { padding: 20px 10px; }
-    }
+        h1 { font-size: 26px; margin: 0 0 10px 0; font-weight: 700; }
+        p { color: var(--text-muted); font-size: 15px; line-height: 1.6; margin-bottom: 30px; }
 
-    .controls {
-      text-align: center;
-      margin: 30px 0 10px 0;
-      display: flex;
-      justify-content: center;
-      gap: 15px;
-      flex-wrap: wrap;
-    }
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: 700;
+            border-radius: 14px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
 
-    .action-btn {
-      display: inline-block;
-      background: linear-gradient(45deg, #FFD700, #FFA500);
-      color: #2a0845;
-      padding: 12px 25px;
-      font-size: 1.1em;
-      font-weight: bold;
-      border-radius: 50px;
-      cursor: pointer;
-      box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
-      transition: all 0.3s ease;
-      border: none;
-    }
+        .btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        .btn-danger { background: var(--danger); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2); }
 
-    .action-btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 25px rgba(255, 215, 0, 0.8);
-      background: linear-gradient(45deg, #FFF8DC, #FFD700);
-    }
+        .video-box {
+            width: 100%;
+            border-radius: 16px;
+            background: #000;
+            margin-top: 20px;
+            overflow: hidden;
+            display: none;
+            border: 2px solid #334155;
+        }
 
-    .slideshow-btn { background: linear-gradient(45deg, #00C9FF, #92FE9D); color: #0b0c10; }
-    .camera-btn { background: linear-gradient(45deg, #8E2DE2, #4A00E0); color: white; }
-
-    .gallery-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-      padding: 40px;
-      max-width: 1200px;
-      margin: 0 auto;
-      perspective: 1200px;
-    }
-
-    .gallery-item {
-      border-radius: 12px;
-      overflow: hidden;
-      border: 2px solid transparent;
-      transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
-      cursor: pointer;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.6);
-      background-color: #1a1a1d;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .gallery-item img, .gallery-item video {
-      width: 100%;
-      height: 300px;
-      object-fit: cover;
-      display: block;
-      transition: transform 0.5s ease;
-    }
-
-    .caption-bar {
-      padding: 12px;
-      text-align: center;
-      background: #0b0c10;
-      color: var(--gold-accent);
-      font-weight: bold;
-      font-size: 0.9em;
-      border-top: 1px solid #333;
-    }
-
-    .gallery-item:hover {
-      border: 2px solid var(--gold-accent);
-      transform: translateY(-10px) scale(1.02);
-      z-index: 5;
-    }
-
-    .video-indicator {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(0,0,0,0.6);
-      color: var(--gold-accent);
-      padding: 5px 10px;
-      border-radius: 20px;
-      font-size: 0.9em;
-      font-weight: bold;
-      z-index: 10;
-    }
-
-    /* Modal Styles */
-    .modal {
-      display: none; 
-      position: fixed;
-      z-index: 100;
-      padding-top: 2vh;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      perspective: 1500px;
-    }
-
-    .modal.show-modal {
-      display: flex;
-      flex-direction: column;
-      background-color: rgba(0, 0, 0, 0.95); 
-      backdrop-filter: blur(12px);
-    }
-
-    .modal-toolbar {
-      width: 100%;
-      display: flex;
-      justify-content: flex-end;
-      padding: 20px;
-      box-sizing: border-box;
-      gap: 20px;
-    }
-
-    .icon-btn {
-      color: var(--gold-accent);
-      font-size: 35px;
-      cursor: pointer;
-      transition: 0.3s;
-      background: none;
-      border: none;
-    }
-    
-    .icon-btn:hover { color: var(--danger-color); transform: scale(1.2); }
-    .close-btn:hover { color: #fff; }
-
-    .modal-content-wrapper {
-      margin: auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      max-width: 90%;
-      max-height: 80vh;
-      animation: grandUnfold 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-    }
-
-    .modal-content-wrapper img, .modal-content-wrapper video {
-      max-width: 100%;
-      max-height: 70vh;
-      border: 4px solid var(--gold-accent);
-      border-radius: 12px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-    }
-
-    .modal-caption {
-      margin-top: 15px;
-      font-size: 1.5em;
-      color: var(--gold-accent);
-      text-shadow: 0 2px 10px rgba(0,0,0,0.8);
-      text-align: center;
-    }
-
-    /* Live Camera specific styles */
-    #cameraFeed {
-      width: 100%;
-      max-width: 800px;
-      border-radius: 12px;
-      border: 4px solid var(--gold-accent);
-      background-color: #000;
-      transform: scaleX(1); /* Mirror effect handled in JS */
-    }
-    
-    .camera-actions {
-      display: flex;
-      gap: 15px;
-      margin-top: 20px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    
-    .record-btn { background: var(--danger-color); color: white; }
-    .recording-active { animation: pulse 1s infinite alternate; }
-
-    @keyframes grandUnfold {
-      0% { opacity: 0; transform: translateY(100px) scale(0.8); }
-      100% { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    
-    @keyframes pulse {
-      0% { box-shadow: 0 0 10px var(--danger-color); }
-      100% { box-shadow: 0 0 30px var(--danger-color), 0 0 10px white; }
-    }
-  </style>
+        video { width: 100%; display: block; transform: scaleX(-1); }
+        .status-msg { color: #3b82f6; font-weight: 600; margin-top: 15px; }
+    </style>
 </head>
 <body>
 
-  <header class="album-header">
-    <img src="1761410005401.jpg" alt="Prajit Computer Institute Logo" class="site-logo">
-    <h1>Celebration Memories</h1>
-    <p>A Grand Digital Collection</p>
-  </header>
-
-  <div class="controls">
-    <input type="file" id="fileInput" accept="image/*,video/*" multiple hidden>
-    <label for="fileInput" class="action-btn"><span>📂 Upload Media</span></label>
-    <button id="openCameraBtn" class="action-btn camera-btn"><span>📷 Open Camera</span></button>
-    <button id="slideshowBtn" class="action-btn slideshow-btn"><span>▶ Play Slideshow</span></button>
-  </div>
-
-  <main class="gallery-container" id="gallery"></main>
-
-  <!-- Viewing Modal -->
-  <div id="mediaModal" class="modal">
-    <div class="modal-toolbar">
-      <button id="deleteItemBtn" class="icon-btn" title="Delete this item">🗑</button>
-      <button class="icon-btn close-btn" onclick="closeModal()" title="Close">✖</button>
+<div class="visitor-card">
+    <div class="lang-picker">
+        <button id="btnEn" class="lang-btn active" onclick="setLanguage('en')">English</button>
+        <button id="btnTa" class="lang-btn" onclick="setLanguage('ta')">தமிழ்</button>
     </div>
-    <div id="modalContainer" class="modal-content-wrapper"></div>
-  </div>
 
-  <!-- Camera Modal -->
-  <div id="cameraModal" class="modal">
-    <div class="modal-toolbar">
-      <button id="switchCamBtn" class="icon-btn" title="Switch Camera" style="color:white;">🔄</button>
-      <button class="icon-btn close-btn" onclick="closeCameraModal()" title="Close Camera">✖</button>
-    </div>
-    <div class="modal-content-wrapper" style="animation: none;">
-      <video id="cameraFeed" autoplay playsinline></video>
-      <div class="camera-actions">
-        <button id="takePhotoBtn" class="action-btn">📸 Take Photo</button>
-        <button id="recordVideoBtn" class="action-btn record-btn">🔴 Start Video</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // --- DATABASE & STATE LOGIC ---
-    let db;
-    let mediaList = []; 
-    let currentSlideshowIndex = 0;
-    let slideshowInterval = null;
-    let currentlyViewedDbKey = null; 
-
-    const gallery = document.getElementById('gallery');
-    const request = indexedDB.open("GrandAlbumDB_v2", 1);
-
-    request.onupgradeneeded = function(event) {
-      db = event.target.result;
-      db.createObjectStore("media", { keyPath: "id", autoIncrement: true });
-    };
-    request.onsuccess = function(event) {
-      db = event.target.result;
-      loadSavedMedia(); 
-    };
-
-    // --- RENDER LOGIC ---
-    function renderMedia(item) {
-      const newDiv = document.createElement('div');
-      newDiv.className = 'gallery-item';
-      
-      const mediaURL = URL.createObjectURL(item.file);
-      mediaList.push({ ...item, url: mediaURL }); 
-      
-      if (item.type.startsWith('video/')) {
-        const newVid = document.createElement('video');
-        newVid.src = mediaURL;
-        newVid.muted = true; newVid.loop = true; newVid.autoplay = true;
-        
-        const indicator = document.createElement('div');
-        indicator.className = 'video-indicator';
-        indicator.innerText = '▶ Video';
-        newDiv.appendChild(indicator);
-        newDiv.appendChild(newVid);
-      } else {
-        const newImg = document.createElement('img');
-        newImg.src = mediaURL;
-        newDiv.appendChild(newImg);
-      }
-
-      const captionBar = document.createElement('div');
-      captionBar.className = 'caption-bar';
-      captionBar.innerText = item.caption || "Special Moment";
-      newDiv.appendChild(captionBar);
-      
-      newDiv.onclick = function() { openModal(item.type, mediaURL, item.caption, item.id); };
-      gallery.appendChild(newDiv);
-    }
-
-    function loadSavedMedia() {
-      const objectStore = db.transaction("media").objectStore("media");
-      objectStore.openCursor().onsuccess = function(event) {
-        const cursor = event.target.result;
-        if (cursor) {
-          renderMedia(cursor.value);
-          cursor.continue();
-        }
-      };
-    }
-
-    function saveToDatabase(file, defaultCaptionText) {
-      let userCaption = prompt(`Enter a caption (or leave blank):`, defaultCaptionText);
-      if (!userCaption) userCaption = defaultCaptionText;
-
-      const transaction = db.transaction(["media"], "readwrite");
-      const newItem = { file: file, type: file.type, caption: userCaption };
-      const addRequest = transaction.objectStore("media").add(newItem);
-      
-      addRequest.onsuccess = function(e) {
-        newItem.id = e.target.result; 
-        renderMedia(newItem);
-      };
-    }
-
-    // --- FILE UPLOAD LOGIC ---
-    document.getElementById('fileInput').addEventListener('change', function(event) {
-      const files = event.target.files;
-      Array.from(files).forEach(file => saveToDatabase(file, "Uploaded File"));
-      this.value = ""; 
-    });
-
-    // --- VIEWING MODAL LOGIC ---
-    const mediaModal = document.getElementById("mediaModal");
-    const modalContainer = document.getElementById("modalContainer");
-
-    function openModal(type, src, captionText, dbKey) {
-      stopSlideshow();
-      currentlyViewedDbKey = dbKey;
-      mediaModal.classList.add("show-modal");
-      modalContainer.innerHTML = ""; 
-
-      if (type.startsWith('video')) {
-        const vid = document.createElement('video');
-        vid.src = src; vid.controls = true; vid.autoplay = true;
-        modalContainer.appendChild(vid);
-      } else {
-        const img = document.createElement('img');
-        img.src = src;
-        modalContainer.appendChild(img);
-      }
-      const captionNode = document.createElement('div');
-      captionNode.className = 'modal-caption';
-      captionNode.innerText = captionText;
-      modalContainer.appendChild(captionNode);
-    }
-
-    function closeModal() {
-      mediaModal.classList.remove("show-modal");
-      modalContainer.innerHTML = ""; 
-      stopSlideshow();
-    }
-
-    document.getElementById("deleteItemBtn").onclick = function() {
-      if (currentlyViewedDbKey && confirm("Delete this memory?")) {
-        db.transaction(["media"], "readwrite").objectStore("media").delete(currentlyViewedDbKey).oncomplete = () => location.reload();
-      }
-    };
-
-    // --- LIVE CAMERA LOGIC ---
-    const cameraModal = document.getElementById('cameraModal');
-    const cameraFeed = document.getElementById('cameraFeed');
-    const recordVideoBtn = document.getElementById('recordVideoBtn');
+    <div id="badge" class="status-badge">VISITOR TERMINAL</div>
     
-    let currentStream = null;
-    let mediaRecorder = null;
-    let recordedChunks = [];
-    let isRecording = false;
-    let facingMode = "environment"; // Default to back camera
+    <div id="initScreen">
+        <h1 id="mainTitle">Smart Doorbell</h1>
+        <p id="mainDesc">Press the button below to ring the house panel and initiate a secure live video connection with the resident.</p>
+        <button id="callButton" class="btn" onclick="startCallToResident()">Template Text</button>
+    </div>
 
-    async function initCamera() {
-      if (currentStream) { currentStream.getTracks().forEach(track => track.stop()); }
-      try {
-        currentStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: facingMode },
-          audio: true // Request audio for video recording
-        });
-        cameraFeed.srcObject = currentStream;
-        // Mirror the feed if using front camera
-        cameraFeed.style.transform = facingMode === "user" ? "scaleX(-1)" : "scaleX(1)";
-      } catch (err) {
-        alert("Camera access denied or unavailable.");
-      }
-    }
+    <div id="callScreen" style="display: none;">
+        <h1 id="streamTitle" style="font-size: 20px;">Stream Active</h1>
+        <div id="callStatus" class="status-msg">Connecting to panel...</div>
+        <div class="video-box" id="videoBox">
+            <video id="remoteVideo" autoplay playsinline></video>
+        </div>
+        <button id="endButton" class="btn btn-danger" style="margin-top: 25px;" onclick="disconnectCall()">End Call</button>
+    </div>
+</div>
 
-    document.getElementById('openCameraBtn').onclick = () => {
-      cameraModal.classList.add('show-modal');
-      initCamera();
+<script>
+    let peer = null;
+    let localStream = null;
+    let currentCall = null;
+    let currentLang = 'en';
+
+    // Translations Dictionary
+    const dictionary = {
+        en: {
+            badge: "VISITOR TERMINAL",
+            title: "Smart Doorbell",
+            desc: "Press the button below to ring the house panel and initiate a secure live video connection with the resident.",
+            callBtn: "📞 Call Resident",
+            streamTitle: "Stream Active",
+            connecting: "Connecting to panel...",
+            connected: "● LIVE INTERCOM CONNECTED",
+            endBtn: "End Call",
+            errNoQr: "Invalid Door QR Code. No targeted door identifier detected in the web link.",
+            errOffline: "Connection failed. The house panel app might be offline right now.",
+            errPermission: "Camera/Audio system access denied. Please allow permissions to make calls.",
+            alertEnded: "Call Disconnected"
+        },
+        ta: {
+            badge: "வருகையாளர் முனையம்",
+            title: "ஸ்மார்ட் அழைப்பு மணி",
+            desc: "வீட்டில் உள்ளவரைத் தொடர்பு கொண்டு பாதுகாப்பான நேரடி வீடியோ அழைப்பைத் தொடங்க கீழே உள்ள பொத்தானை அழுத்தவும்.",
+            callBtn: "📞 அழைப்பைத் தொடங்கு",
+            streamTitle: "நேரடி இணைப்பு",
+            connecting: "இணைப்பு தேடப்படுகிறது...",
+            connected: "● நேரடித் தொடர்பு இணைக்கப்பட்டது",
+            endBtn: "அழைப்பை முடி",
+            errNoQr: "தவறான QR குறியீடு. முகவரி அடையாளம் கண்டறியப்படவில்லை.",
+            errOffline: "தொடர்பு தோல்வியடைந்தது. வீட்டுப் பேனல் ஆஃப்லைனில் இருக்கலாம்.",
+            errPermission: "கேமரா அல்லது மைக்ரோஃபோன் அனுமதி மறுக்கப்பட்டது. தயவுசெய்து அனுமதி வழங்கவும்.",
+            alertEnded: "அழைப்பு துண்டிக்கப்பட்டது"
+        }
     };
 
-    function closeCameraModal() {
-      cameraModal.classList.remove('show-modal');
-      if (currentStream) { currentStream.getTracks().forEach(track => track.stop()); }
-      if (isRecording) stopRecording();
-    }
+    // Automatically reads the ?door= identifier from the QR code link
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetDoorId = urlParams.get('door');
 
-    document.getElementById('switchCamBtn').onclick = () => {
-      facingMode = facingMode === "environment" ? "user" : "environment";
-      initCamera();
+    window.onload = () => {
+        setLanguage('en'); // Default language display set to English
+        
+        if (!targetDoorId) {
+            document.getElementById('initScreen').innerHTML = `
+                <h1 style="color:var(--danger)">Error / பிழை</h1>
+                <p>${dictionary.en.errNoQr}</p>
+                <p>${dictionary.ta.errNoQr}</p>
+            `;
+        }
     };
 
-    // Take Photo
-    document.getElementById('takePhotoBtn').onclick = () => {
-      if (!currentStream) return;
-      const canvas = document.createElement('canvas');
-      canvas.width = cameraFeed.videoWidth;
-      canvas.height = cameraFeed.videoHeight;
-      const ctx = canvas.getContext('2d');
-      
-      // Handle mirroring on canvas if front camera
-      if (facingMode === "user") {
-        ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1);
-      }
-      ctx.drawImage(cameraFeed, 0, 0, canvas.width, canvas.height);
-      
-      canvas.toBlob(blob => {
-        const file = new File([blob], `photo_${Date.now()}.jpg`, { type: "image/jpeg" });
-        saveToDatabase(file, "Captured Photo");
-        closeCameraModal();
-      }, 'image/jpeg', 0.9);
-    };
+    // Swap Language Rendering Dynamically
+    function setLanguage(lang) {
+        currentLang = lang;
+        
+        // Handle Active Button Highlights
+        document.getElementById('btnEn').classList.remove('active');
+        document.getElementById('btnTa').classList.remove('active');
+        if(lang === 'en') document.getElementById('btnEn').classList.add('active');
+        if(lang === 'ta') document.getElementById('btnTa').classList.add('active');
 
-    // Record Video
-    recordVideoBtn.onclick = () => {
-      if (!isRecording) startRecording();
-      else stopRecording();
-    };
-
-    function startRecording() {
-      recordedChunks = [];
-      try {
-        mediaRecorder = new MediaRecorder(currentStream, { mimeType: 'video/webm' });
-      } catch (e) {
-        mediaRecorder = new MediaRecorder(currentStream); // Fallback for some browsers (Safari/iOS)
-      }
-      
-      mediaRecorder.ondataavailable = event => { if (event.data.size > 0) recordedChunks.push(event.data); };
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/mp4' });
-        const file = new File([blob], `video_${Date.now()}.mp4`, { type: blob.type });
-        saveToDatabase(file, "Recorded Video");
-        closeCameraModal();
-      };
-      
-      mediaRecorder.start();
-      isRecording = true;
-      recordVideoBtn.innerText = "⏹ Stop Video";
-      recordVideoBtn.classList.add("recording-active");
+        // Apply text switch injections safely
+        if (!targetDoorId) return; 
+        document.getElementById('badge').innerText = dictionary[lang].badge;
+        document.getElementById('mainTitle').innerText = dictionary[lang].title;
+        document.getElementById('mainDesc').innerText = dictionary[lang].desc;
+        document.getElementById('callButton').innerText = dictionary[lang].callBtn;
+        document.getElementById('streamTitle').innerText = dictionary[lang].streamTitle;
+        document.getElementById('endButton').innerText = dictionary[lang].endBtn;
+        
+        if(document.getElementById('callScreen').style.display === 'block') {
+            if(document.getElementById('videoBox').style.display === 'block') {
+                document.getElementById('callStatus').innerText = dictionary[lang].connected;
+            } else {
+                document.getElementById('callStatus').innerText = dictionary[lang].connecting;
+            }
+        }
     }
 
-    function stopRecording() {
-      if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        mediaRecorder.stop();
-        isRecording = false;
-        recordVideoBtn.innerText = "🔴 Start Video";
-        recordVideoBtn.classList.remove("recording-active");
-      }
+    async function startCallToResident() {
+        document.getElementById('initScreen').style.display = 'none';
+        document.getElementById('callScreen').style.display = 'block';
+        document.getElementById('callStatus').innerText = dictionary[currentLang].connecting;
+        
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            peer = new Peer();
+            
+            peer.on('open', () => {
+                const call = peer.call('qr-bell-' + targetDoorId, localStream);
+                currentCall = call;
+
+                call.on('stream', (remoteStream) => {
+                    document.getElementById('callStatus').innerText = dictionary[currentLang].connected;
+                    document.getElementById('videoBox').style.display = 'block';
+                    document.getElementById('remoteVideo').srcObject = remoteStream;
+                });
+            });
+
+            peer.on('error', (err) => {
+                alert(dictionary[currentLang].errOffline);
+                disconnectCall();
+            });
+
+        } catch (err) {
+            alert(dictionary[currentLang].errPermission);
+            location.reload();
+        }
     }
 
-    // --- SLIDESHOW LOGIC ---
-    document.getElementById("slideshowBtn").onclick = () => {
-      if (mediaList.length === 0) return alert("Add some photos first!");
-      currentSlideshowIndex = 0; playNextSlide();
-    };
-
-    function playNextSlide() {
-      if (currentSlideshowIndex >= mediaList.length) currentSlideshowIndex = 0; 
-      const item = mediaList[currentSlideshowIndex];
-      openModal(item.type, item.url, item.caption, item.id);
-      
-      if (item.type.startsWith('video/')) {
-        document.querySelector('#modalContainer video').onended = () => { currentSlideshowIndex++; playNextSlide(); };
-      } else {
-        slideshowInterval = setTimeout(() => { currentSlideshowIndex++; playNextSlide(); }, 3000); 
-      }
+    function disconnectCall() {
+        if (currentCall) currentCall.close();
+        if (localStream) localStream.getTracks().forEach(track => track.stop());
+        alert(dictionary[currentLang].alertEnded);
+        location.reload();
     }
-
-    function stopSlideshow() {
-      if (slideshowInterval) { clearTimeout(slideshowInterval); slideshowInterval = null; }
-    }
-
-    // Close Modals on Escape Key
-    document.addEventListener('keydown', e => {
-      if (e.key === "Escape") { closeModal(); closeCameraModal(); }
-    });
-  </script>
+</script>
 </body>
 </html>
